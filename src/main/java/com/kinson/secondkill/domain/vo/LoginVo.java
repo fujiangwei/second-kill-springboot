@@ -21,7 +21,7 @@ public class LoginVo {
     public String toString() {
         return "LoginVo{" +
                 "mobile='" + mobile + '\'' +
-                ", password=******" +
+                ", password='" + password + '\'' +
                 '}';
     }
 }

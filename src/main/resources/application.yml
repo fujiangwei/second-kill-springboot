@@ -3,6 +3,9 @@ server:
   port: 8080
 
 spring:
+  # thymeleaf配置
+  thymeleaf:
+    cache: false
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

@@ -12,6 +12,7 @@ import com.kinson.secondkill.utils.CookieUtil;
 import com.kinson.secondkill.utils.MD5Util;
 import com.kinson.secondkill.utils.UUIDUtil;
 import com.kinson.secondkill.utils.ValidatorUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
  * @date
  */
 @Service
+@Slf4j(topic = "UserServiceImpl")
 // 当有多个相同类型的bean时,使用@Primary来赋予bean更高的优先级
 @Primary
 public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implements IUserService {
@@ -53,7 +55,9 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implem
             throw new GlobalException(RespBeanEnum.LOGIN_ERROR);
         }
         // 判断密码是否正确
-        if (!MD5Util.formPassToDBPass(password, user.getSalt()).equals(user.getPassword())) {
+        String formPassToDBPass = MD5Util.formPassToDBPass(password, user.getSalt());
+        log.info("formPassToDBPass = {}", formPassToDBPass);
+        if (!formPassToDBPass.equals(user.getPassword())) {
             throw new GlobalException(RespBeanEnum.LOGIN_ERROR);
         }
         // 生成Cookie
