@@ -1,0 +1,35 @@
+# 应用服务端口
+server:
+  port: 8080
+
+spring:
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/seckill?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    # hikari连接池
+    hikari:
+      # 线程池名称
+      pool-name: SecondKillHikariCP
+      # 最小空闲数，当minimumIdle小于maximumPoolSize时有效，0表示空闲连接永远不会被移除
+      minimum-idle: 5
+      # 空闲超时时间ms，此处为30min
+      idle-timeout: 1800000
+      # 最大线程池数
+      maximum-pool-size: 10
+      # 自动提交
+      auto-commit: true
+      # 最大存活时间ms
+      max-lifetime: 1800000
+      # 连接建立超时时间 单位ms 默认30000
+      connection-timeout: 30000
+      # 连接测试查询语句
+      connection-test-query: SELECT 1
+
+# Mybatis-plus配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.kinson.secondkill.domain
+

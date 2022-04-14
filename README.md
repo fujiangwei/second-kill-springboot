@@ -1,37 +1,47 @@
-# second-kill-springboot
+# Springboot+redis等实现java秒杀项目
 
-#### 介绍
-springboot+redis实现java秒杀 参照B站https://www.bilibili.com/video/BV1pS4y1K7Wt?share_source=copy_web
+## 介绍
 
-#### 软件架构
-软件架构说明
+springboot+redis实现java秒杀 参照[B站教程](https://www.bilibili.com/video/BV1pS4y1K7Wt?share_source=copy_web)
+## 视频内容
 
-
-#### 安装教程
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 使用说明
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 参与贡献
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+1. 项目框架搭建
+   1. SpringBoot环境搭建
+   2. 集成Thymeleaf,RespBean
+   3. MyBatis
+2. 分布式会话
+   1. 用户登录
+      1. 设计数据库
+      2. 明文密码二次MD5加密
+      3. 参数校验+全局异常处理
+   2. 共享Session
+      1. SpringSession
+      2. Redis
+3. 功能开发
+   1. 商品列表
+   2. 商品详情
+   3. 秒杀
+   4. 订单详情
+4. 系统压测
+   1. JMeter
+   2. 自定义变量模拟多用户
+   3. JMeter命令行的使用
+   4. 正式压测
+      1. 商品列表
+      2. 秒杀
+5. 页面优化
+   1. 页面缓存+URL缓存+对象缓存
+   2. 页面静态化，前后端分离
+   3. 静态资源优化
+   4. CDN优化
+6. 接口优化
+   1. Redis预减库存减少数据库的访问
+   2. 内存标记减少Redis的访问
+   3. RabbitMQ异步下单
+      1. SpringBoot整合RabbitMQ
+      2. 交换机
+7. 安全优化
+   1. 秒杀接口地址隐藏
+   2. 算术验证码
+   3. 接口防刷
+8. 主流的秒杀方案
