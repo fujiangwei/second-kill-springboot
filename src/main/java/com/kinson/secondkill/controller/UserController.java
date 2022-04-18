@@ -3,6 +3,7 @@ package com.kinson.secondkill.controller;
 import com.kinson.secondkill.domain.RespBean;
 import com.kinson.secondkill.domain.UserEntity;
 import com.kinson.secondkill.service.IUserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @Describe 用户控制器
  * @date
  */
+@Slf4j(topic = "UserController")
 @RestController
 @RequestMapping("/user")
 public class UserController {

@@ -19,7 +19,7 @@ import javax.validation.Valid;
  * @author:
  * @date:
  **/
-@Slf4j
+@Slf4j(topic = "LoginController")
 @RequestMapping("/login")
 @Controller
 public class LoginController {

@@ -1,6 +1,6 @@
 # 应用服务端口
 server:
-  port: 8080
+  port: 8088
 
 spring:
   # thymeleaf配置
@@ -36,3 +36,10 @@ mybatis-plus:
   mapper-locations: classpath*:mapper/*.xml
   type-aliases-package: com.kinson.secondkill.domain
 
+# log4j配置
+logging:
+  # log4j配置文件的位置
+  config: classpath:log4j2.xml
+  # 配置sql打印的路径
+  level:
+    com.kinson.secondkill.mapper: debug

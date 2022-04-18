@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author
- * @Describe 功能描述
+ * @Describe 用户服务接口实现
  * @date
  */
 @Service
@@ -41,14 +41,14 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implem
         String mobile = loginVo.getMobile();
         String password = loginVo.getPassword();
 
-        // 参数校验
-        if (StringUtils.isEmpty(mobile) || StringUtils.isEmpty(password)) {
+        // 参数校验 由入参@Valid注解进行控制,校验不通过会在全局异常中的BindException中进行处理
+        /*if (StringUtils.isEmpty(mobile) || StringUtils.isEmpty(password)) {
             throw new GlobalException(RespBeanEnum.LOGIN_ERROR);
         }
 
         if (!ValidatorUtil.isMobile(mobile)) {
             return RespBean.error(RespBeanEnum.MOBILE_ERROR);
-        }
+        }*/
 
         UserEntity user = userMapper.selectById(mobile);
         if (user == null) {
@@ -56,7 +56,7 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implem
         }
         // 判断密码是否正确
         String formPassToDBPass = MD5Util.formPassToDBPass(password, user.getSalt());
-        log.info("formPassToDBPass = {}", formPassToDBPass);
+        // log.info("formPassToDBPass = {}", formPassToDBPass);
         if (!formPassToDBPass.equals(user.getPassword())) {
             throw new GlobalException(RespBeanEnum.LOGIN_ERROR);
         }
@@ -66,7 +66,7 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implem
         // redisTemplate.opsForValue().set("user:" + userTicket, user);
 
         // 会话设置用户信息
-        // request.getSession().setAttribute(userTicket, user);
+        request.getSession().setAttribute(userTicket, user);
         CookieUtil.setCookie(request, response, "userTicket", userTicket);
         return RespBean.success(userTicket);
     }
