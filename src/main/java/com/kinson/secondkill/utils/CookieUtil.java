@@ -186,6 +186,9 @@ public class CookieUtil {
      * 得到cookie的域名
      */
     private static final String getDomainName(HttpServletRequest request) {
+        if (StringUtils.equals(request.getRemoteHost(), "127.0.0.1")) {
+            return request.getRemoteHost();
+        }
         String domainName = null;
         // 通过request对象获取访问的url地址
         String serverName = request.getRequestURL().toString();
