@@ -5,3 +5,18 @@
 2022-04-18 22:10:27.207 [http-nio-8088-exec-3] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
 2022-04-18 22:13:15.699 [http-nio-8088-exec-6] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
 2022-04-18 22:22:48.565 [http-nio-8088-exec-3] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:06:35.911 [http-nio-8088-exec-4] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:15:35.406 [http-nio-8088-exec-1] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:17:47.189 [http-nio-8088-exec-1] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:32:07.277 [http-nio-8088-exec-3] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:36:27.122 [http-nio-8088-exec-2] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:40:17.974 [SecondKillHikariCP housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - SecondKillHikariCP - Thread starvation or clock leap detected (housekeeper delta=1m53s996ms749µs300ns).
+2022-04-19 13:42:29.406 [http-nio-8088-exec-2] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:43:29.809 [SecondKillHikariCP housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - SecondKillHikariCP - Thread starvation or clock leap detected (housekeeper delta=1m27s959ms80µs400ns).
+2022-04-19 13:45:39.575 [http-nio-8088-exec-2] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:46:43.929 [http-nio-8088-exec-1] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:49:14.286 [http-nio-8088-exec-2] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:51:25.206 [http-nio-8088-exec-1] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:53:28.107 [http-nio-8088-exec-1] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:55:13.626 [http-nio-8088-exec-2] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
+2022-04-19 13:59:56.917 [http-nio-8088-exec-2] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
