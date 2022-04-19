@@ -1,7 +1,0 @@
-2022-04-18 20:51:01.035 [SecondKillHikariCP housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - SecondKillHikariCP - Thread starvation or clock leap detected (housekeeper delta=23h23m40s515ms96µs82ns).
-2022-04-18 21:41:51.153 [http-nio-8088-exec-2] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
-2022-04-18 21:48:09.846 [SecondKillHikariCP housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - SecondKillHikariCP - Thread starvation or clock leap detected (housekeeper delta=59s421ms405µs328ns).
-2022-04-18 21:49:26.818 [SecondKillHikariCP housekeeper] WARN  com.zaxxer.hikari.pool.HikariPool - SecondKillHikariCP - Thread starvation or clock leap detected (housekeeper delta=1m16s963ms199µs621ns).
-2022-04-18 22:10:27.207 [http-nio-8088-exec-3] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
-2022-04-18 22:13:15.699 [http-nio-8088-exec-6] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
-2022-04-18 22:22:48.565 [http-nio-8088-exec-3] WARN  com.zaxxer.hikari.HikariConfig - SecondKillHikariCP - idleTimeout is close to or more than maxLifetime, disabling it.
