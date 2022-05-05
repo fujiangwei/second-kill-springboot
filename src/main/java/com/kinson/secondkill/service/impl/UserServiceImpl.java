@@ -9,14 +9,15 @@ import com.kinson.secondkill.exception.GlobalException;
 import com.kinson.secondkill.mapper.IUserMapper;
 import com.kinson.secondkill.service.IUserService;
 import com.kinson.secondkill.utils.CookieUtil;
+import com.kinson.secondkill.utils.JsonUtil;
 import com.kinson.secondkill.utils.MD5Util;
 import com.kinson.secondkill.utils.UUIDUtil;
-import com.kinson.secondkill.utils.ValidatorUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.thymeleaf.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,6 +35,9 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implem
 
     @Autowired
     private IUserMapper userMapper;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @Override
     public RespBean doLogin(LoginVo loginVo, HttpServletRequest request, HttpServletResponse response) {
@@ -63,10 +67,10 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implem
         // 生成Cookie
         String userTicket = UUIDUtil.uuid();
         // 将用户信息存入redis
-        // redisTemplate.opsForValue().set("user:" + userTicket, user);
+        redisTemplate.opsForValue().set("user:" + userTicket, JsonUtil.object2JsonStr(user));
 
-        // 会话设置用户信息
-        request.getSession().setAttribute(userTicket, user);
+        // 会话设置用户信息，放入redis替换
+        // request.getSession().setAttribute(userTicket, user);
         CookieUtil.setCookie(request, response, "userTicket", userTicket);
         return RespBean.success(userTicket);
     }
@@ -78,6 +82,29 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implem
 
     @Override
     public RespBean updatePassword(String userTicket, String password, HttpServletRequest request, HttpServletResponse response) {
+        return null;
+    }
+
+    @Override
+    public UserEntity getByUserTicket(String userTicket, HttpServletRequest request, HttpServletResponse response) {
+        if (StringUtils.isEmpty(userTicket)) {
+            log.warn("userTicket为空");
+            return null;
+        }
+
+        // 从redis中获取用户信息
+        String userJson = (String) redisTemplate.opsForValue().get("user:" + userTicket);
+        if (StringUtils.isEmpty(userJson)) {
+            log.warn("userJson为空");
+            return null;
+        }
+
+        UserEntity user = JsonUtil.jsonStr2Object(userJson, UserEntity.class);
+        if (null != user) {
+            CookieUtil.setCookie(request, response, "userTicket", userTicket);
+            return user;
+        }
+
         return null;
     }
 }
