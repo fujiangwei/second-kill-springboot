@@ -1,6 +1,6 @@
 # 应用服务端口
 server:
-  port: 8088
+  port: 8080
 
 spring:
   # thymeleaf配置
