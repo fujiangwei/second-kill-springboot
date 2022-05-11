@@ -25,6 +25,15 @@ public interface IUserService extends IService<UserEntity> {
     RespBean doLogin(LoginVo loginVo, HttpServletRequest request, HttpServletResponse response);
 
     /**
+     *	更新密码
+     *	@param userTicket
+     *	@param id
+     *	@param password
+     *	@return
+     */
+    RespBean updatePassword(String userTicket,Long id,String password);
+
+    /**
      * 根据cookie获取用户
      *
      * @param userTicket
