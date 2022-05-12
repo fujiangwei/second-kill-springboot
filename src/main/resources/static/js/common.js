@@ -1,16 +1,22 @@
 //展示loading
 function g_showLoading(){
-	var idx = layer.msg('处理中...', {icon: 16,shade: [0.5, '#f5f5f5'],scrollbar: false,offset: '0px', time:100000}) ;  
+	var idx = layer.msg('处理中...', {icon: 16,shade: [0.5, '#f5f5f5'],scrollbar: false,offset: '0px', time:100000}) ;
 	return idx;
 }
 //salt
 var g_passsword_salt="1a2b3c4d"
-// 获取url参数
+// 获取url参数即?xxx=xxx格式
 function g_getQueryString(name) {
 	var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
 	var r = window.location.search.substr(1).match(reg);
 	if(r != null) return unescape(r[2]);
 	return null;
+};
+// /获取url路径中的值参数即/xxx/xxx/...格式
+function g_getPathVarString(index) {
+    var r = window.location.pathname.split("/");
+    if(r != null && r.length >= index) return unescape(r[index]);
+    return null;
 };
 //设定时间格式化函数，使用new Date().format("yyyy-MM-dd HH:mm:ss");
 Date.prototype.format = function (format) {

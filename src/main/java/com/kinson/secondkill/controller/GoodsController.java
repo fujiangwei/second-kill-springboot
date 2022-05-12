@@ -1,6 +1,8 @@
 package com.kinson.secondkill.controller;
 
+import com.kinson.secondkill.domain.RespBean;
 import com.kinson.secondkill.domain.UserEntity;
+import com.kinson.secondkill.domain.vo.GoodsDetailVo;
 import com.kinson.secondkill.domain.vo.GoodsVo;
 import com.kinson.secondkill.service.IGoodsService;
 import com.kinson.secondkill.service.IUserService;
@@ -124,8 +126,11 @@ public class GoodsController {
         // Redis中获取页面，如果不为空，直接返回页面
         String goodsListHtmlCache = (String) vos.get("goodsList");
         if (StringUtils.isNotEmpty(goodsListHtmlCache)) {
+            log.info("缓存中获取商品列表页面");
             return goodsListHtmlCache;
         }
+
+        log.info("缓存中未获取商品列表页面");
 
         model.addAttribute("user", user);
         model.addAttribute("goodsList", goodsService.findGoodsVo());
@@ -179,7 +184,7 @@ public class GoodsController {
     }
 
     /**
-     * 跳转到详情()
+     * 商品详情页面优化（缓存）
      *
      * @param model
      * @param user
@@ -193,8 +198,11 @@ public class GoodsController {
         ValueOperations vos = redisTemplate.opsForValue();
         String goodsDetailHtmlCache = (String) vos.get("goodsDetail:" + goodsId);
         if (StringUtils.isNotEmpty(goodsDetailHtmlCache)) {
+            log.info("缓存中获取商品详情页面goodsDetail:" + goodsId);
             return goodsDetailHtmlCache;
         }
+
+        log.info("缓存中未获取商品详情页面goodsDetail:" + goodsId);
 
         model.addAttribute("user", user);
         GoodsVo goods = goodsService.findGoodsVoByGoodsId(goodsId);
@@ -224,13 +232,84 @@ public class GoodsController {
                 request.getServletContext(), request.getLocale(), model.asMap());
         model.addAttribute("remainSeconds", remainSeconds);
 
-        goodsDetailHtmlCache = thymeleafViewResolver.getTemplateEngine().process("goodsDetail:", context);
+        goodsDetailHtmlCache = thymeleafViewResolver.getTemplateEngine().process("goodsDetail", context);
         if (StringUtils.isNotEmpty(goodsDetailHtmlCache)) {
-            vos.set("goodsDetail" + goodsId, goodsDetailHtmlCache, 60, TimeUnit.SECONDS);
+            vos.set("goodsDetail:" + goodsId, goodsDetailHtmlCache, 60, TimeUnit.SECONDS);
             return goodsDetailHtmlCache;
         }
 
         return "goodsDetail";
+    }
+
+    /**
+     * 商品详情页面优化（缓存）
+     *
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/toDetail", produces = "text/html;charset=utf-8")
+    @ResponseBody
+    public String toDetailStatic(HttpServletRequest request, HttpServletResponse response,
+                           Long goodsId) {
+        ValueOperations vos = redisTemplate.opsForValue();
+        String goodsDetailHtmlCache = (String) vos.get("toDetailStatic:" + goodsId);
+        if (StringUtils.isNotEmpty(goodsDetailHtmlCache)) {
+            log.info("缓存中获取商品详情页面toDetailStatic:" + goodsId);
+            return goodsDetailHtmlCache;
+        }
+
+        log.info("缓存中未获取商品详情页面toDetailStatic:" + goodsId);
+        // 如果为空，手动渲染，存入Redis并返回
+        WebContext context = new WebContext(request, response,
+                request.getServletContext(), request.getLocale());
+
+        goodsDetailHtmlCache = thymeleafViewResolver.getTemplateEngine().process("goodsDetail", context);
+        if (StringUtils.isNotEmpty(goodsDetailHtmlCache)) {
+            vos.set("toDetailStatic:" + goodsId, goodsDetailHtmlCache, 3600, TimeUnit.SECONDS);
+            return goodsDetailHtmlCache;
+        }
+
+        return "goodsDetail";
+    }
+
+    /**
+     * 商品详情数据获取
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/detail/{goodsId}")
+    @ResponseBody
+    public RespBean detail(UserEntity user, @PathVariable Long goodsId) {
+        GoodsVo goods = goodsService.findGoodsVoByGoodsId(goodsId);
+        Date startDate = goods.getStartDate();
+        Date endDate = goods.getEndDate();
+        Date nowDate = new Date();
+        // 秒杀状态
+        int secKillStatus = 0;
+        // 剩余开始时间
+        int remainSeconds = 0;
+        if (nowDate.before(startDate)) {
+            // 秒杀还未开始
+            remainSeconds = (int) ((startDate.getTime() - nowDate.getTime()) / 1000);
+        } else if (nowDate.after(endDate)) {
+            // 秒杀已结束
+            secKillStatus = 2;
+            remainSeconds = -1;
+        } else {
+            // 秒杀中
+            secKillStatus = 1;
+            remainSeconds = 0;
+        }
+
+        GoodsDetailVo goodsDetailVo = new GoodsDetailVo();
+        goodsDetailVo.setGoodsVo(goods);
+        goodsDetailVo.setUser(user);
+        goodsDetailVo.setRemainSeconds(remainSeconds);
+        goodsDetailVo.setSecKillStatus(secKillStatus);
+
+        return RespBean.success(goodsDetailVo);
     }
 
 

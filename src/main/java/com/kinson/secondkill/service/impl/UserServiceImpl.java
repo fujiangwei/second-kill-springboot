@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author
@@ -66,8 +67,8 @@ public class UserServiceImpl extends ServiceImpl<IUserMapper, UserEntity> implem
         }
         // 生成Cookie
         String userTicket = UUIDUtil.uuid();
-        // 将用户信息存入redis
-        redisTemplate.opsForValue().set("user:" + userTicket, JsonUtil.object2JsonStr(user));
+        // 将用户信息存入redis，有效时长为30分钟
+        redisTemplate.opsForValue().set("user:" + userTicket, JsonUtil.object2JsonStr(user), 1800, TimeUnit.SECONDS);
 
         // 会话设置用户信息，放入redis替换
         // request.getSession().setAttribute(userTicket, user);
