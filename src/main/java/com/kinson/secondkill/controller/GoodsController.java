@@ -247,9 +247,9 @@ public class GoodsController {
      * @param goodsId
      * @return
      */
-    @RequestMapping(value = "/toDetail", produces = "text/html;charset=utf-8")
+    @RequestMapping(value = "/toDetail3", produces = "text/html;charset=utf-8")
     @ResponseBody
-    public String toDetailStatic(HttpServletRequest request, HttpServletResponse response,
+    public String toDetailStatic2(HttpServletRequest request, HttpServletResponse response,
                            Long goodsId) {
         ValueOperations vos = redisTemplate.opsForValue();
         String goodsDetailHtmlCache = (String) vos.get("toDetailStatic:" + goodsId);
@@ -265,10 +265,21 @@ public class GoodsController {
 
         goodsDetailHtmlCache = thymeleafViewResolver.getTemplateEngine().process("goodsDetail", context);
         if (StringUtils.isNotEmpty(goodsDetailHtmlCache)) {
-            vos.set("toDetailStatic:" + goodsId, goodsDetailHtmlCache, 3600, TimeUnit.SECONDS);
+            vos.set("toDetailStatic:" + goodsId, goodsDetailHtmlCache, 60, TimeUnit.SECONDS);
             return goodsDetailHtmlCache;
         }
 
+        return "goodsDetail";
+    }
+
+    /**
+     * 商品详情页面静态化
+     *
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/toDetail")
+    public String toDetailStatic(Long goodsId) {
         return "goodsDetail";
     }
 

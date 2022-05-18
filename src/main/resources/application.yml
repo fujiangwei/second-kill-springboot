@@ -3,6 +3,25 @@ server:
   port: 8080
 
 spring:
+  # web配置
+  web:
+    # 静态资源处理
+    resources:
+      # 启用默认静态资源处理，默认启用
+      add-mappings: true
+      cache:
+        cachecontrol:
+          # 缓存响应时间，单位秒
+          max-age: 3600
+      chain:
+        # 资源链中启用缓存，默认启用
+        cache: true
+        # 启用资源链，默认禁用
+        enabled: true
+        # 启用压缩资源(gzip,brotli)解析,默认禁用
+        compressed: true
+      # 静态资源位置
+      static-locations: classpath:/static/
   # thymeleaf配置
   thymeleaf:
     cache: false

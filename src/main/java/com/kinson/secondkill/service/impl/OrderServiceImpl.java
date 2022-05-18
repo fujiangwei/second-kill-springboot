@@ -7,7 +7,11 @@ import com.kinson.secondkill.domain.SeckillGoodsEntity;
 import com.kinson.secondkill.domain.SeckillOrderEntity;
 import com.kinson.secondkill.domain.UserEntity;
 import com.kinson.secondkill.domain.vo.GoodsVo;
+import com.kinson.secondkill.domain.vo.OrderDetailVo;
+import com.kinson.secondkill.enums.RespBeanEnum;
+import com.kinson.secondkill.exception.GlobalException;
 import com.kinson.secondkill.mapper.IOrderMapper;
+import com.kinson.secondkill.service.IGoodsService;
 import com.kinson.secondkill.service.IOrderService;
 import com.kinson.secondkill.service.ISecKillGoodsService;
 import com.kinson.secondkill.service.ISecKillOrderService;
@@ -38,6 +42,9 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
 
     @Autowired
     private ISecKillOrderService secKillOrderService;
+
+    @Autowired
+    private IGoodsService goodsService;
 
     @Override
     @Transactional
@@ -70,5 +77,25 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
         secKillOrderService.save(secKillOrder);
 
         return order;
+    }
+
+    /**
+     * 订单详情
+     *
+     * @param orderId
+     * @return
+     */
+    @Override
+    public OrderDetailVo detail(Long orderId) {
+        if (null == orderId) {
+            throw new GlobalException(RespBeanEnum.ORDER_NOT_EXIST);
+        }
+        OrderEntity order = orderMapper.selectById(orderId);
+        GoodsVo goodsVo = goodsService.findGoodsVoByGoodsId(order.getGoodsId());
+        OrderDetailVo detail = new OrderDetailVo();
+        detail.setGoodsVo(goodsVo);
+        detail.setOrder(order);
+
+        return detail;
     }
 }
