@@ -10,7 +10,9 @@ import com.kinson.secondkill.enums.RespBeanEnum;
 import com.kinson.secondkill.service.IGoodsService;
 import com.kinson.secondkill.service.IOrderService;
 import com.kinson.secondkill.service.ISecKillOrderService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,6 +37,9 @@ public class SecKillController {
     @Autowired
     private IOrderService orderService;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     @RequestMapping("/doSecKill")
     public String doSecKill(Model model, UserEntity user, Long goodsId) {
         if (user == null) {
@@ -47,7 +52,7 @@ public class SecKillController {
             model.addAttribute("errmsg", RespBeanEnum.EMPTY_STOCK.getMessage());
             return "secKillFail";
         }
-        // 判断是否重复抢购
+        // 判断是否重复抢购(解决同一用户同时秒杀多件商,可以通过数据库建立唯一索引避免)
         SeckillOrderEntity secKillOrder = secKillOrderService.getOne(new QueryWrapper<SeckillOrderEntity>()
                 .eq("user_id", user.getId()).eq("goods_id", goodsId));
         if (secKillOrder != null) {
@@ -72,13 +77,23 @@ public class SecKillController {
         if (goods.getStockCount() < 1) {
             return RespBean.error(RespBeanEnum.EMPTY_STOCK);
         }
-        // 判断是否重复抢购
-        SeckillOrderEntity seckillOrder = secKillOrderService.getOne(new QueryWrapper<SeckillOrderEntity>().eq("user_id",
-                user.getId()).eq("goods_id", goodsId));
-        if (seckillOrder != null) {
+        // 判断是否重复抢购(解决同一用户同时秒杀多件商,可以通过数据库建立唯一索引避免)
+        /*SeckillOrderEntity secKillOrder = secKillOrderService.getOne(new QueryWrapper<SeckillOrderEntity>()
+                .eq("user_id", user.getId()).eq("goods_id", goodsId));
+        if (secKillOrder != null) {
+            return RespBean.error(RespBeanEnum.REPEATE_ERROR);
+        }*/
+        // 从redis缓存获取(成功秒杀生成订单时会写入redis)
+        String secKillOrderJson = (String) redisTemplate.opsForValue().get("order:" + user.getId() + ":" + goodsId);
+        if (StringUtils.isNotEmpty(secKillOrderJson)) {
             return RespBean.error(RespBeanEnum.REPEATE_ERROR);
         }
+        // 秒杀
         OrderEntity order = orderService.secKill(user, goods);
+        if (null == order) {
+            return RespBean.error(RespBeanEnum.ERROR);
+        }
+
         return RespBean.success(order);
     }
 }

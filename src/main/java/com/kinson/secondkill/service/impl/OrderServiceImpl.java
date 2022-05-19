@@ -1,6 +1,7 @@
 package com.kinson.secondkill.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.kinson.secondkill.domain.OrderEntity;
 import com.kinson.secondkill.domain.SeckillGoodsEntity;
@@ -15,9 +16,11 @@ import com.kinson.secondkill.service.IGoodsService;
 import com.kinson.secondkill.service.IOrderService;
 import com.kinson.secondkill.service.ISecKillGoodsService;
 import com.kinson.secondkill.service.ISecKillOrderService;
+import com.kinson.secondkill.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +49,9 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
     @Autowired
     private IGoodsService goodsService;
 
+    @Autowired
+    private RedisTemplate redisTemplate;
+
     @Override
     @Transactional
     public OrderEntity secKill(UserEntity user, GoodsVo goods) {
@@ -54,7 +60,15 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
         SeckillGoodsEntity secKillGoods = secKillGoodsService.getOne(new QueryWrapper<SeckillGoodsEntity>()
                 .eq("goods_id", goods.getId()));
         secKillGoods.setStockCount(secKillGoods.getStockCount() - 1);
-        secKillGoodsService.updateById(secKillGoods);
+        // secKillGoodsService.updateById(secKillGoods);
+        // 减库存时判断库存是否足够(库存超卖)
+        boolean secKillGoodsResult = secKillGoodsService.update(new UpdateWrapper<SeckillGoodsEntity>()
+                .set("stock_count", secKillGoods.getStockCount())
+                .eq("id", secKillGoods.getId())
+                .gt("stock_count", 0));
+        if (!secKillGoodsResult) {
+            return null;
+        }
 
         // 生成订单
         OrderEntity order = new OrderEntity();
@@ -75,6 +89,9 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
         secKillOrder.setUserId(user.getId());
         secKillOrder.setGoodsId(goods.getId());
         secKillOrderService.save(secKillOrder);
+        // 将秒杀订单信息存入Redis，方便判断是否重复抢购时进行查询
+        redisTemplate.opsForValue().set("order:" + user.getId() + ":" + goods.getId(),
+                JsonUtil.object2JsonStr(secKillOrder));
 
         return order;
     }
