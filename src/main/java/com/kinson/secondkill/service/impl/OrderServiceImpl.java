@@ -59,14 +59,23 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
         // 秒杀商品表减库存
         SeckillGoodsEntity secKillGoods = secKillGoodsService.getOne(new QueryWrapper<SeckillGoodsEntity>()
                 .eq("goods_id", goods.getId()));
-        secKillGoods.setStockCount(secKillGoods.getStockCount() - 1);
+        Integer stockCurCount = secKillGoods.getStockCount();
+        int stockRemainCount = stockCurCount - 1;
+        log.info("用户{}抢购商品{}的当前库存为{},线程为[{}:{}]", user.getId(), goods.getId(), secKillGoods.getStockCount(),
+                Thread.currentThread().getId(), Thread.currentThread().getName());
+        secKillGoods.setStockCount(stockRemainCount);
         // secKillGoodsService.updateById(secKillGoods);
         // 减库存时判断库存是否足够(库存超卖)
         boolean secKillGoodsResult = secKillGoodsService.update(new UpdateWrapper<SeckillGoodsEntity>()
-                .set("stock_count", secKillGoods.getStockCount())
+                .set("stock_count", stockRemainCount)
                 .eq("id", secKillGoods.getId())
+                // 乐观 只修前面查询的库粗数量
+                .eq("stock_count", stockCurCount)
                 .gt("stock_count", 0));
+        log.info("用户{}抢购商品{}更新库存数量为{}的结果为{},线程为[{}:{}]", user.getId(), goods.getId(), stockRemainCount,
+                secKillGoodsResult, Thread.currentThread().getId(), Thread.currentThread().getName());
         if (!secKillGoodsResult) {
+            log.info("用户{}抢购商品{}库存不足", user.getId(), goods.getId());
             return null;
         }
 
@@ -82,6 +91,8 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
         order.setStatus(0);
         order.setCreateDate(new Date());
         orderMapper.insert(order);
+        log.info("用户{}抢购商品{}成功，生成订单为{},线程为[{}:{}]", user.getId(), goods.getId(), order.getId(),
+                Thread.currentThread().getId(), Thread.currentThread().getName());
 
         // 生成秒杀订单
         SeckillOrderEntity secKillOrder = new SeckillOrderEntity();
@@ -89,6 +100,8 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
         secKillOrder.setUserId(user.getId());
         secKillOrder.setGoodsId(goods.getId());
         secKillOrderService.save(secKillOrder);
+        log.info("用户{}抢购商品{}成功，生成秒杀订单为{},线程为[{}:{}]", user.getId(), goods.getId(), secKillOrder.getId(),
+                Thread.currentThread().getId(), Thread.currentThread().getName());
         // 将秒杀订单信息存入Redis，方便判断是否重复抢购时进行查询
         redisTemplate.opsForValue().set("order:" + user.getId() + ":" + goods.getId(),
                 JsonUtil.object2JsonStr(secKillOrder));

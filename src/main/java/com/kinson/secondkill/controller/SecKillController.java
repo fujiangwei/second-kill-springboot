@@ -10,6 +10,7 @@ import com.kinson.secondkill.enums.RespBeanEnum;
 import com.kinson.secondkill.service.IGoodsService;
 import com.kinson.secondkill.service.IOrderService;
 import com.kinson.secondkill.service.ISecKillOrderService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @date:
  **/
 @Controller
+@Slf4j(topic = "SecKillController")
 @RequestMapping("/secKill")
 public class SecKillController {
 
@@ -49,18 +51,25 @@ public class SecKillController {
         GoodsVo goods = goodsService.findGoodsVoByGoodsId(goodsId);
         // 判断库存
         if (goods.getStockCount() < 1) {
+            log.warn("用户{}抢购商品{}库存不足", user.getId(), goodsId);
             model.addAttribute("errmsg", RespBeanEnum.EMPTY_STOCK.getMessage());
             return "secKillFail";
         }
-        // 判断是否重复抢购(解决同一用户同时秒杀多件商,可以通过数据库建立唯一索引避免)
+        // 判断是否重复抢购(解决同一用户同时秒杀多件商品,可以通过数据库建立唯一索引避免)
         SeckillOrderEntity secKillOrder = secKillOrderService.getOne(new QueryWrapper<SeckillOrderEntity>()
                 .eq("user_id", user.getId()).eq("goods_id", goodsId));
         if (secKillOrder != null) {
+            log.warn("用户{}已抢购商品{},同一用户只能秒杀一件商品", user.getId(), goodsId);
             model.addAttribute("errmsg", RespBeanEnum.REPEATE_ERROR.getMessage());
             return "secKillFail";
         }
         // 秒杀
         OrderEntity order = orderService.secKill(user, goods);
+        if (null == order) {
+            log.warn("用户{}抢购商品{}失败", user.getId(), goodsId);
+            model.addAttribute("errmsg", RespBeanEnum.EMPTY_STOCK.getMessage());
+            return "secKillFail";
+        }
         model.addAttribute("order", order);
         model.addAttribute("goods", goods);
         return "orderDetail";
