@@ -25,7 +25,7 @@
                sg.start_date,
                sg.end_date
         FROM t_goods g
-        LEFT JOIN t_seckill_goods sg on g.id = sg.goods_id
+        RIGHT JOIN t_seckill_goods sg on g.id = sg.goods_id
     </select>
 
     <select id="findGoodsVoByGoodsId" resultType="GoodsVo">

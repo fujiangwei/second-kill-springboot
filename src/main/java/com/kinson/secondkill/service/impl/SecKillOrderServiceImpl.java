@@ -31,7 +31,6 @@ public class SecKillOrderServiceImpl extends ServiceImpl<ISecKillOrderMapper, Se
 
     @Override
     public Long getResult(UserEntity user, Long goodsId) {
-
         // 查询秒杀订单信息
         SeckillOrderEntity secKillOrder = secKillOrderMapper.selectOne(new QueryWrapper<SeckillOrderEntity>()
                 .eq("user_id", user.getId()).eq("goods_id", goodsId));

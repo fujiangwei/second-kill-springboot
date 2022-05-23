@@ -26,9 +26,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @date:
  **/
 @Controller
-@Slf4j(topic = "SecKillController")
-@RequestMapping("/secKill")
-public class SecKillController {
+@Slf4j(topic = "SecKillController2")
+@RequestMapping("/secKill2")
+public class SecKillController2 {
 
     @Autowired
     private IGoodsService goodsService;
