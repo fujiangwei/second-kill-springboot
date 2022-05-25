@@ -61,15 +61,20 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
         // 秒杀商品表减库存
         SeckillGoodsEntity secKillGoods = secKillGoodsService.getOne(new QueryWrapper<SeckillGoodsEntity>()
                 .eq("goods_id", goods.getId()));
+        if (secKillGoods.getStockCount() < 1) {
+            log.info("用户{}抢购商品{}库存不足,同步设置缓存isStockEmpty为0", user.getId(), goods.getId());
+            // 判断是否还有库存
+            valueOperations.set("isStockEmpty:" + goods.getId(), "0");
+            return null;
+        }
+        // 库存减一
         boolean secKillGoodsResult = secKillGoodsService.update(
                 new UpdateWrapper<SeckillGoodsEntity>()
                         .setSql("stock_count = stock_count- 1")
                         .eq("goods_id", goods.getId())
                         .gt("stock_count", 0));
-        // secKillGoodsService.updateById(secKillGoods);
-        if (secKillGoods.getStockCount() < 1) {
-            // 判断是否还有库存
-            valueOperations.set("isStockEmpty:" + goods.getId(), "0");
+        if (!secKillGoodsResult) {
+            log.info("用户{}抢购商品{}库存不足", user.getId(), goods.getId());
             return null;
         }
 

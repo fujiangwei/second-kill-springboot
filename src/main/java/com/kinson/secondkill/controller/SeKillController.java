@@ -1,13 +1,12 @@
 package com.kinson.secondkill.controller;
 
-import com.kinson.secondkill.domain.RespBean;
-import com.kinson.secondkill.domain.SecKillMessage;
-import com.kinson.secondkill.domain.UserEntity;
+import com.kinson.secondkill.domain.*;
 import com.kinson.secondkill.domain.vo.GoodsVo;
 import com.kinson.secondkill.enums.RespBeanEnum;
 import com.kinson.secondkill.mq.MQSender;
 import com.kinson.secondkill.service.IGoodsService;
 import com.kinson.secondkill.service.IOrderService;
+import com.kinson.secondkill.service.ISecKillGoodsService;
 import com.kinson.secondkill.service.ISecKillOrderService;
 import com.kinson.secondkill.utils.JsonUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 秒杀优化
@@ -41,6 +41,8 @@ public class SeKillController implements InitializingBean {
     private IGoodsService goodsService;
     @Autowired
     private ISecKillOrderService secKillOrderService;
+    @Autowired
+    private ISecKillGoodsService secKillGoodsService;
     @Autowired
     private IOrderService orderService;
     @Autowired
@@ -112,6 +114,37 @@ public class SeKillController implements InitializingBean {
         return RespBean.success(orderId);
     }
 
+    @RequestMapping(value = "/reSet", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean reSetStock() {
+
+        // 删除所有的缓存订单
+        this.prefixMatchDel("order:");
+
+        // 查询所有的商品数据
+        List<GoodsVo> goodsVos = goodsService.findGoodsVo();
+        if (CollectionUtils.isEmpty(goodsVos)) {
+            log.warn("待重置的商品数据为空");
+            return RespBean.success(goodsVos.size());
+        }
+
+        // 设置商品缓存库存
+        goodsVos.forEach(goodsVo -> {
+            redisTemplate.opsForValue().set("secKillGoods:" + goodsVo.getId(), goodsVo.getStockCount());
+            EMPTY_STOCK_MAP.put(goodsVo.getId(), false);
+        });
+
+        return RespBean.success(goodsVos.size());
+    }
+
+    /**
+     * 前缀删除
+     * @param key
+     */
+    public void prefixMatchDel(String key) {
+        Set<String> keys = redisTemplate.keys(key + "*");
+        redisTemplate.delete(keys);
+    }
 
     /**
      * 系统初始化，把商品库存数量加载到Redis
