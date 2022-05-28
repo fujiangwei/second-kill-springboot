@@ -1,6 +1,8 @@
 package com.kinson.secondkill.controller;
 
-import com.kinson.secondkill.domain.*;
+import com.kinson.secondkill.domain.RespBean;
+import com.kinson.secondkill.domain.SecKillMessage;
+import com.kinson.secondkill.domain.UserEntity;
 import com.kinson.secondkill.domain.vo.GoodsVo;
 import com.kinson.secondkill.enums.RespBeanEnum;
 import com.kinson.secondkill.mq.MQSender;
@@ -15,16 +17,14 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 秒杀优化
@@ -49,6 +49,8 @@ public class SeKillController implements InitializingBean {
     private RedisTemplate redisTemplate;
     @Autowired
     private MQSender mqSender;
+    @Autowired
+    private RedisScript<Long> redisScript;
 
     /**
      * 内存标记,减少Redis访问
@@ -62,9 +64,9 @@ public class SeKillController implements InitializingBean {
      * @param goodsId
      * @return
      */
-    @RequestMapping(value = "/doSecKill", method = RequestMethod.POST)
+    @RequestMapping(value = "/doSecKill2", method = RequestMethod.POST)
     @ResponseBody
-    public RespBean doSecKill(UserEntity user, Long goodsId) {
+    public RespBean doSecKill2(UserEntity user, Long goodsId) {
         if (user == null) {
             log.warn("用户信息为空，待秒杀商品{}", goodsId);
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
@@ -88,6 +90,45 @@ public class SeKillController implements InitializingBean {
             log.warn("用户{}秒杀商品{}库存不足,更新内存标识", user.getId(), goodsId);
             EMPTY_STOCK_MAP.put(goodsId, true);
             valueOperations.increment("secKillGoods:" + goodsId);
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+        // 请求入队，立即返回排队中
+        SecKillMessage message = new SecKillMessage(user, goodsId);
+        mqSender.sendSecKillMessage(JsonUtil.object2JsonStr(message));
+        return RespBean.success(0);
+    }
+
+    /**
+     * 使用lua脚本优化redis预减库存
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/doSecKill", method = RequestMethod.POST)
+    @ResponseBody
+    public RespBean doSecKill(UserEntity user, Long goodsId) {
+        if (user == null) {
+            log.warn("用户信息为空，待秒杀商品{}", goodsId);
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+        // 判断是否重复抢购
+        String secKillOrderJson = (String) valueOperations.get("order:" + user.getId() + ":" + goodsId);
+        if (!StringUtils.isEmpty(secKillOrderJson)) {
+            log.warn("用户{}已秒杀商品{},同一用户只能秒杀一件", user.getId(), goodsId);
+            return RespBean.error(RespBeanEnum.REPEATE_ERROR);
+        }
+        // 内存标记,减少Redis访问
+        if (EMPTY_STOCK_MAP.get(goodsId)) {
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+        // 预减库存（使用lua脚本实现）
+        Long stock = (Long) redisTemplate.execute(redisScript,
+                Collections.singletonList("secKillGoods:" + goodsId), Collections.EMPTY_LIST);
+        if (stock < 0) {
+            log.warn("用户{}秒杀商品{}库存不足,更新内存标识", user.getId(), goodsId);
+            EMPTY_STOCK_MAP.put(goodsId, true);
             return RespBean.error(RespBeanEnum.EMPTY_STOCK);
         }
         // 请求入队，立即返回排队中
@@ -139,6 +180,7 @@ public class SeKillController implements InitializingBean {
 
     /**
      * 前缀删除
+     *
      * @param key
      */
     public void prefixMatchDel(String key) {
