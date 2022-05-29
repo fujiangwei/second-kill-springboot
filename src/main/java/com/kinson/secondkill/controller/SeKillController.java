@@ -229,6 +229,7 @@ public class SeKillController implements InitializingBean {
     @ResponseBody
     public RespBean getPath(UserEntity user, Long goodsId, String captcha, HttpServletRequest request) {
         if (user == null) {
+
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
         ValueOperations valueOperations = redisTemplate.opsForValue();
