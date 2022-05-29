@@ -29,4 +29,36 @@ public interface IOrderService extends IService<OrderEntity> {
      * @return
      */
     OrderDetailVo detail(Long orderId);
+
+    /**
+     * 验证秒杀地址
+     *
+     * @param user
+     * @param goodsId
+     * @param path
+     * @return
+     */
+    boolean checkPath(UserEntity user, Long goodsId, String path);
+
+
+    /**
+     * 生成秒杀地址
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    String createPath(UserEntity user, Long goodsId);
+
+    /**
+     * 校验验证码
+     *
+     * @param user
+     * @param goodsId
+     * @param captcha
+     * @return
+     */
+    boolean checkCaptcha(UserEntity user, Long goodsId, String captcha);
+
+
 }

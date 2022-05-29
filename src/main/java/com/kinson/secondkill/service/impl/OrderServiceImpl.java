@@ -17,7 +17,10 @@ import com.kinson.secondkill.service.IOrderService;
 import com.kinson.secondkill.service.ISecKillGoodsService;
 import com.kinson.secondkill.service.ISecKillOrderService;
 import com.kinson.secondkill.utils.JsonUtil;
+import com.kinson.secondkill.utils.MD5Util;
+import com.kinson.secondkill.utils.UUIDUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -26,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author
@@ -121,5 +125,55 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
         detail.setOrder(order);
 
         return detail;
+    }
+
+    /**
+     * 验证请求地址
+     *
+     * @param user
+     * @param goodsId
+     * @param path
+     * @return
+     */
+    @Override
+    public boolean checkPath(UserEntity user, Long goodsId, String path) {
+        if (user == null || StringUtils.isEmpty(path)) {
+            return false;
+        }
+        String redisPath = (String) redisTemplate.opsForValue().get("secKillPath:" + user.getId() + ":" + goodsId);
+        return path.equals(redisPath);
+    }
+
+    /**
+     * 生成秒杀地址
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @Override
+    public String createPath(UserEntity user, Long goodsId) {
+        String str = MD5Util.md5(UUIDUtil.uuid() + "123456");
+        redisTemplate.opsForValue().set("secKillPath:" + user.getId() + ":" +
+                goodsId, str, 60, TimeUnit.SECONDS);
+        return str;
+    }
+
+    /**
+     * 校验验证码
+     *
+     * @param user
+     * @param goodsId
+     * @param captcha
+     * @return
+     */
+    @Override
+    public boolean checkCaptcha(UserEntity user, Long goodsId, String captcha) {
+        if (StringUtils.isEmpty(captcha) || null == user || goodsId < 0) {
+            return false;
+        }
+
+        String redisCaptcha = (String) redisTemplate.opsForValue().get("captcha:" + user.getId() + ":" + goodsId);
+        return redisCaptcha.equals(captcha);
     }
 }

@@ -5,12 +5,14 @@ import com.kinson.secondkill.domain.SecKillMessage;
 import com.kinson.secondkill.domain.UserEntity;
 import com.kinson.secondkill.domain.vo.GoodsVo;
 import com.kinson.secondkill.enums.RespBeanEnum;
+import com.kinson.secondkill.exception.GlobalException;
 import com.kinson.secondkill.mq.MQSender;
 import com.kinson.secondkill.service.IGoodsService;
 import com.kinson.secondkill.service.IOrderService;
 import com.kinson.secondkill.service.ISecKillGoodsService;
 import com.kinson.secondkill.service.ISecKillOrderService;
 import com.kinson.secondkill.utils.JsonUtil;
+import com.wf.captcha.ArithmeticCaptcha;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -20,11 +22,16 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 秒杀优化
@@ -100,6 +107,7 @@ public class SeKillController implements InitializingBean {
 
     /**
      * 使用lua脚本优化redis预减库存
+     *
      * @param user
      * @param goodsId
      * @return
@@ -186,6 +194,139 @@ public class SeKillController implements InitializingBean {
     public void prefixMatchDel(String key) {
         Set<String> keys = redisTemplate.keys(key + "*");
         redisTemplate.delete(keys);
+    }
+
+    /**
+     * 获取秒杀地址
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    /*@RequestMapping(value = "/path", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getPath(UserEntity user, Long goodsId, String captcha) {
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+        boolean check = orderService.checkCaptcha(user, goodsId, captcha);
+        if (!check) {
+            return RespBean.error(RespBeanEnum.ERROR_CAPTCHA);
+        }
+        String str = orderService.createPath(user, goodsId);
+
+        return RespBean.success(str);
+    }*/
+
+    /**
+     * 获取秒杀地址
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/path", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getPath(UserEntity user, Long goodsId, String captcha, HttpServletRequest request) {
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+        // 限制访问次数，5秒内访问5次
+        String uri = request.getRequestURI();
+        // 方便测试captcha = "0";
+        Integer count = (Integer) valueOperations.get(uri + ":" + user.getId());
+        if (count == null) {
+            valueOperations.set(uri + ":" + user.getId(), 1, 5, TimeUnit.SECONDS);
+        } else if (count < 5) {
+            valueOperations.increment(uri + ":" + user.getId());
+        } else {
+            return RespBean.error(RespBeanEnum.ACCESS_LIMIT_REACHED);
+        }
+        boolean check = orderService.checkCaptcha(user, goodsId, captcha);
+        if (!check) {
+            return RespBean.error(RespBeanEnum.ERROR_CAPTCHA);
+        }
+
+        String str = orderService.createPath(user, goodsId);
+        return RespBean.success(str);
+    }
+
+    /**
+     * 秒杀
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/{path}/doSecKill", method = RequestMethod.POST)
+    @ResponseBody
+    public RespBean doSecKill(@PathVariable String path, UserEntity user, Long goodsId) {
+        if (user == null) {
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+        ValueOperations valueOperations = redisTemplate.opsForValue();
+        boolean check = orderService.checkPath(user, goodsId, path);
+        if (!check) {
+            log.warn("用户{}已秒杀商品{},同一用户只能秒杀一件", user.getId(), goodsId);
+            return RespBean.error(RespBeanEnum.REQUEST_ILLEGAL);
+        }
+        // 判断是否重复抢购
+        String secKillOrderJson = (String) valueOperations.get("order:" + user.getId() + ":" + goodsId);
+        if (!StringUtils.isEmpty(secKillOrderJson)) {
+            log.warn("用户{}已秒杀商品{},同一用户只能秒杀一件", user.getId(), goodsId);
+            return RespBean.error(RespBeanEnum.REPEATE_ERROR);
+        }
+        // 内存标记,减少Redis访问
+        if (EMPTY_STOCK_MAP.get(goodsId)) {
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+        // 预减库存
+        /*Long stock = valueOperations.decrement("secKillGoods:" + goodsId);
+        if (stock < 0) {
+            EMPTY_STOCK_MAP.put(goodsId, true);
+            valueOperations.increment("secKillGoods:" + goodsId);
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }*/
+        Long stock = (Long) redisTemplate.execute(redisScript,
+                Collections.singletonList("secKillGoods:" + goodsId), Collections.EMPTY_LIST);
+        if (stock <= 0) {
+            log.warn("用户{}已秒杀商品{}库存不足", user.getId(), goodsId);
+            EMPTY_STOCK_MAP.put(goodsId, true);
+            return RespBean.error(RespBeanEnum.EMPTY_STOCK);
+        }
+        // 请求入队，立即返回排队中
+        SecKillMessage message = new SecKillMessage(user, goodsId);
+        mqSender.sendSecKillMessage(JsonUtil.object2JsonStr(message));
+        return RespBean.success(0);
+    }
+
+    /**
+     * 验证码
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/captcha", method = RequestMethod.GET)
+    public void verifyCode(UserEntity user, Long goodsId, HttpServletResponse response) {
+        if (null == user || goodsId < 0) {
+            throw new GlobalException(RespBeanEnum.REQUEST_ILLEGAL);
+        }
+        // 设置请求头为输出图片类型
+        response.setContentType("image/jpg");
+        response.setHeader("Pragma", "No-cache");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setDateHeader("Expires", 0);
+        // 生成验证码，将结果放入redis
+        ArithmeticCaptcha captcha = new ArithmeticCaptcha(130, 32, 3);
+
+        redisTemplate.opsForValue().set("captcha:" + user.getId() + ":" + goodsId, captcha.text(), 300, TimeUnit.SECONDS);
+        try {
+            captcha.out(response.getOutputStream());
+        } catch (IOException e) {
+            log.error("验证码生成失败", e.getMessage());
+        }
     }
 
     /**
