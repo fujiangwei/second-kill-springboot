@@ -136,7 +136,7 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
      * @return
      */
     @Override
-    public boolean checkPath(UserEntity user, Long goodsId, String path) {
+    public Boolean checkPath(UserEntity user, Long goodsId, String path) {
         if (user == null || StringUtils.isEmpty(path)) {
             return false;
         }

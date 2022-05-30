@@ -2,9 +2,7 @@ package com.kinson.secondkill.config;
 
 import com.kinson.secondkill.domain.UserEntity;
 import com.kinson.secondkill.service.IUserService;
-import com.kinson.secondkill.utils.CookieUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
@@ -12,9 +10,6 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @Description: 自定义用户参数
@@ -37,7 +32,7 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
-        HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
+        /*HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
         HttpServletResponse response = webRequest.getNativeResponse(HttpServletResponse.class);
         String userTicket = CookieUtil.getCookieValue(request, "userTicket");
         if (StringUtils.isEmpty(userTicket)) {
@@ -45,6 +40,11 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
             return null;
         }
 
-        return userService.getByUserTicket(userTicket, request, response);
+        return userService.getByUserTicket(userTicket, request, response);*/
+
+        /**
+         * 从用户上下文数据获取
+         */
+        return UserContext.getUser();
     }
 }

@@ -1,5 +1,6 @@
 package com.kinson.secondkill.controller;
 
+import com.kinson.secondkill.annotaions.AccessLimit;
 import com.kinson.secondkill.domain.RespBean;
 import com.kinson.secondkill.domain.SecKillMessage;
 import com.kinson.secondkill.domain.UserEntity;
@@ -219,15 +220,15 @@ public class SeKillController implements InitializingBean {
     }*/
 
     /**
-     * 获取秒杀地址
+     * 获取秒杀地址2
      *
      * @param user
      * @param goodsId
      * @return
      */
-    @RequestMapping(value = "/path", method = RequestMethod.GET)
+    @RequestMapping(value = "/path2", method = RequestMethod.GET)
     @ResponseBody
-    public RespBean getPath(UserEntity user, Long goodsId, String captcha, HttpServletRequest request) {
+    public RespBean getPath2(UserEntity user, Long goodsId, String captcha, HttpServletRequest request) {
         if (user == null) {
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
@@ -245,6 +246,33 @@ public class SeKillController implements InitializingBean {
         }
         boolean check = orderService.checkCaptcha(user, goodsId, captcha);
         if (!check) {
+            log.warn("用户{}秒杀商品{}的验证码{}校验错误", user.getId(), goodsId, captcha);
+            return RespBean.error(RespBeanEnum.ERROR_CAPTCHA);
+        }
+
+        String str = orderService.createPath(user, goodsId);
+        return RespBean.success(str);
+    }
+
+    /**
+     * 获取秒杀地址
+     *
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @AccessLimit(second = 5, maxCount = 5, needLogin = true)
+    @RequestMapping(value = "/path", method = RequestMethod.GET)
+    @ResponseBody
+    public RespBean getPath(UserEntity user, Long goodsId, String captcha, HttpServletRequest request) {
+        if (user == null) {
+            log.warn("秒杀商品{}的用户信息为空", goodsId);
+            return RespBean.error(RespBeanEnum.SESSION_ERROR);
+        }
+        // 方便测试captcha = "0";
+        boolean check = orderService.checkCaptcha(user, goodsId, captcha);
+        if (!check) {
+            log.warn("用户{}秒杀商品{}的验证码{}校验错误", user.getId(), goodsId, captcha);
             return RespBean.error(RespBeanEnum.ERROR_CAPTCHA);
         }
 
@@ -263,12 +291,13 @@ public class SeKillController implements InitializingBean {
     @ResponseBody
     public RespBean doSecKill(@PathVariable String path, UserEntity user, Long goodsId) {
         if (user == null) {
+            log.warn("秒杀商品{}的用户信息为空", goodsId);
             return RespBean.error(RespBeanEnum.SESSION_ERROR);
         }
         ValueOperations valueOperations = redisTemplate.opsForValue();
         boolean check = orderService.checkPath(user, goodsId, path);
         if (!check) {
-            log.warn("用户{}已秒杀商品{},同一用户只能秒杀一件", user.getId(), goodsId);
+            log.warn("用户{}秒杀商品{}的秒杀路径错误", user.getId(), goodsId, path);
             return RespBean.error(RespBeanEnum.REQUEST_ILLEGAL);
         }
         // 判断是否重复抢购
@@ -288,6 +317,7 @@ public class SeKillController implements InitializingBean {
             valueOperations.increment("secKillGoods:" + goodsId);
             return RespBean.error(RespBeanEnum.EMPTY_STOCK);
         }*/
+        // 使用lua脚本实现库存减少
         Long stock = (Long) redisTemplate.execute(redisScript,
                 Collections.singletonList("secKillGoods:" + goodsId), Collections.EMPTY_LIST);
         if (stock <= 0) {

@@ -38,7 +38,7 @@ public interface IOrderService extends IService<OrderEntity> {
      * @param path
      * @return
      */
-    boolean checkPath(UserEntity user, Long goodsId, String path);
+    Boolean checkPath(UserEntity user, Long goodsId, String path);
 
 
     /**
