@@ -51,8 +51,8 @@
                     <div class="form-inline">
                         <img id="captchaImg" width="130" height="32" style="display: none" onclick="refreshCaptcha()"/>
                         <input id="captcha" class="form-control" style="display: none"/>
-                        <button class="btn btn-primary" type="button" id="buyButton" onclick="getSecKillPath()">立即秒杀
-                        </button>
+                        <button class="btn btn-primary" type="button" id="buyButton" onclick="getSecKillPath()">立即秒杀</button>
+                        <input type="hidden" name="goodsId" id="goodsId"/>
                     </div>
                 </div>
             </td>
@@ -180,7 +180,7 @@
         var captcha = $("#captcha").val();
         g_showLoading();
         $.ajax({
-            url: "/seckill/path",
+            url: "/secKill/path",
             type: "GET",
             data: {
                 goodsId: goodsId,

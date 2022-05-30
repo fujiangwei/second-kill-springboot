@@ -58,7 +58,7 @@ public interface IOrderService extends IService<OrderEntity> {
      * @param captcha
      * @return
      */
-    boolean checkCaptcha(UserEntity user, Long goodsId, String captcha);
+    Boolean checkCaptcha(UserEntity user, Long goodsId, String captcha);
 
 
 }

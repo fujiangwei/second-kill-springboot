@@ -168,7 +168,7 @@ public class OrderServiceImpl extends ServiceImpl<IOrderMapper, OrderEntity> imp
      * @return
      */
     @Override
-    public boolean checkCaptcha(UserEntity user, Long goodsId, String captcha) {
+    public Boolean checkCaptcha(UserEntity user, Long goodsId, String captcha) {
         if (StringUtils.isEmpty(captcha) || null == user || goodsId < 0) {
             return false;
         }
